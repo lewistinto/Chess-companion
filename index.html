@@ -7,555 +7,195 @@
 <meta name="theme-color" content="#111820">
 <title>Chess Companion</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-
 <style>
-:root{
-  color-scheme:dark;
-  --bg:#111820;
-  --panel:#1b2732;
-  --muted:#a8b4bf;
-  --accent:#73c5a3;
-}
+:root{color-scheme:dark;--bg:#111820;--panel:#1b2732;--muted:#a8b4bf;--accent:#73c5a3}
 *{box-sizing:border-box}
-body{
-  margin:0;
-  background:var(--bg);
-  color:#f4f6f8;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-}
-main{
-  width:100%;
-  max-width:620px;
-  margin:auto;
-  padding:20px 14px 40px;
-}
-h1{font-size:26px;margin:4px 0}
-.sub{color:var(--muted);font-size:14px;margin-bottom:18px}
-.panel{
-  background:var(--panel);
-  border:1px solid #344351;
-  border-radius:18px;
-  padding:14px;
-  margin:14px 0;
-}
-.row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-}
-.big{font-size:18px;font-weight:700}
-.muted{color:var(--muted)}
-#board{
-  display:grid;
-  grid-template-columns:repeat(8,minmax(0,1fr));
-  grid-template-rows:repeat(8,minmax(0,1fr));
-  width:100%;
-  aspect-ratio:1/1;
-  border:3px solid #293642;
-  border-radius:7px;
-  overflow:hidden;
-  touch-action:manipulation;
-  margin-top:10px;
-}
-.sq{
-  min-width:0;
-  min-height:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  position:relative;
-  font-size:clamp(24px,9vw,53px);
-  line-height:1;
-  padding:0;
-  border:0;
-  border-radius:0;
-  appearance:none;
-  -webkit-appearance:none;
-}
-.light{background:#e9dfc9;color:#20252b}
-.dark{background:#789477;color:#20252b}
-.sq.sel{box-shadow:inset 0 0 0 4px #f4d35e}
-.sq.dest:after{
-  content:"";
-  width:23%;
-  height:23%;
-  border-radius:50%;
-  background:#1a352b88;
-  position:absolute;
-}
-.sq.capture:after{
-  content:"";
-  position:absolute;
-  inset:4px;
-  border:4px solid #1a352b88;
-  border-radius:50%;
-}
-.sq.best-from{box-shadow:inset 0 0 0 4px #e9b949}
-.sq.best-to{box-shadow:inset 0 0 0 5px #45c98c}
-.coords{
-  position:absolute;
-  left:3px;
-  top:2px;
-  font-size:10px;
-  line-height:1;
-  opacity:.65;
-  pointer-events:none;
-}
-.controls{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-top:13px;
-}
-button{
-  background:#2c3b48;
-  color:#fff;
-  border:1px solid #465867;
-  border-radius:11px;
-  padding:12px 15px;
-  font-size:15px;
-  cursor:pointer;
-}
-button.primary{
-  background:#25634f;
-  border-color:#39846c;
-}
-button:disabled{opacity:.4}
-#result{
-  line-height:1.5;
-  white-space:pre-wrap;
-  overflow-wrap:anywhere;
-  min-height:35px;
-}
-.variation{
-  border-top:1px solid #344351;
-  padding:10px 0;
-  line-height:1.5;
-  overflow-wrap:anywhere;
-}
+body{margin:0;background:var(--bg);color:#f4f6f8;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{width:100%;max-width:620px;margin:auto;padding:18px 12px 36px}
+h1{font-size:26px;margin:4px 0}.sub{color:var(--muted);font-size:14px;margin-bottom:16px}
+.panel{background:var(--panel);border:1px solid #344351;border-radius:17px;padding:13px;margin:13px 0}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.big{font-size:18px;font-weight:700}.muted{color:var(--muted)}
+#board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));width:min(100%,560px);margin:12px auto 0;aspect-ratio:1;border:3px solid #293642;border-radius:7px;overflow:hidden;touch-action:manipulation}
+.sq{min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;padding:0;border:0;border-radius:0;appearance:none;-webkit-appearance:none;font-family:"Arial Unicode MS",serif;font-size:clamp(25px,9vw,54px);line-height:1}
+.light{background:#e9dfc9;color:#20252b}.dark{background:#789477;color:#20252b}
+.sq.sel{box-shadow:inset 0 0 0 4px #f4d35e}.sq.dest:after{content:"";width:22%;height:22%;border-radius:50%;background:#1a352b88;position:absolute}
+.sq.capture:after{content:"";position:absolute;inset:4px;border:4px solid #1a352b88;border-radius:50%}
+.sq.best-from{box-shadow:inset 0 0 0 4px #e9b949}.sq.best-to{box-shadow:inset 0 0 0 5px #45c98c}
+.coords{position:absolute;left:3px;top:2px;font-size:10px;line-height:1;opacity:.65;pointer-events:none}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+button,select{background:#2c3b48;color:#fff;border:1px solid #465867;border-radius:10px;padding:11px 13px;font-size:15px}
+button.primary{background:#25634f;border-color:#39846c}button:disabled{opacity:.4}
+select,input{background:#101820;color:white;border:1px solid #465867;border-radius:9px;padding:10px;font-size:14px}
+input{width:100%}
+#result{line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;min-height:30px}
+.variation{border-top:1px solid #344351;padding:10px 0;line-height:1.5;overflow-wrap:anywhere;font-size:14px}
 .variation strong{color:#83d8b2}
-#moves{
-  font-size:14px;
-  line-height:1.8;
-  max-height:140px;
-  overflow:auto;
-  color:#d3dbe1;
-  overflow-wrap:anywhere;
-}
-input{
-  width:100%;
-  background:#101820;
-  color:white;
-  border:1px solid #465867;
-  border-radius:8px;
-  padding:12px;
-  font-size:14px;
-}
-.note{
-  font-size:12px;
-  line-height:1.5;
-  color:var(--muted);
-}
-.status{
-  color:var(--accent);
-  font-size:13px;
-  margin-top:8px;
-}
-@media(min-width:600px){
-  main{padding-left:20px;padding-right:20px}
-  .panel{padding:18px}
-}
+#moves{font-size:14px;line-height:1.8;max-height:140px;overflow:auto;color:#d3dbe1;overflow-wrap:anywhere}
+.note{font-size:12px;line-height:1.5;color:var(--muted)}
+.status{color:var(--accent);font-size:13px;margin-top:8px}
+@media(min-width:600px){main{padding:20px 20px 40px}.panel{padding:17px}}
 </style>
 </head>
-
 <body>
 <main>
 <h1>Chess Companion</h1>
-<div class="sub">iPhone chessboard and Stockfish 19 position analyser</div>
+<div class="sub">Mobile chessboard, position study and Stockfish 19 Lite analysis</div>
 
-<div class="panel">
-  <div class="row">
-    <div class="big" id="turn">White to move</div>
-    <div class="muted" id="status">Starting position</div>
-  </div>
+<section class="panel">
+ <div class="row"><div class="big" id="turn">White to move</div><div class="muted" id="status">Starting position</div></div>
+ <div id="board" aria-label="Chessboard"></div>
+ <div class="controls">
+  <button id="undo">Undo</button><button id="reset">New game</button>
+  <button class="primary" id="analyse">Analyse position</button><button id="stop" disabled>Stop</button>
+ </div>
+ <div class="controls"><label for="analysisTime" class="muted">Analysis time</label>
+  <select id="analysisTime"><option value="10">10 seconds</option><option value="20" selected>20 seconds</option><option value="30">30 seconds</option></select>
+ </div>
+ <div class="status" id="engineStatus">Engine not started</div>
+</section>
 
-  <div id="board" aria-label="Chessboard"></div>
+<section class="panel">
+ <div class="big">Position analysis</div>
+ <p id="result" class="muted">Make a move, then tap Analyse position.</p>
+ <div id="variations"></div>
+ <p class="note">Stockfish 19 Lite runs in your browser. The first engine load may take a little longer and requires an internet connection.</p>
+</section>
 
-  <div class="controls">
-    <button id="undo">Undo</button>
-    <button id="reset">New game</button>
-    <button class="primary" id="analyse">Analyse position</button>
-    <button id="stop" disabled>Stop analysis</button>
-  </div>
-  <div class="status" id="engineStatus">Engine not started</div>
-</div>
+<section class="panel">
+ <div class="row"><div class="big">Move history</div><div class="muted" id="count">0 plies</div></div>
+ <div id="moves" class="muted">No moves yet.</div>
+</section>
 
-<div class="panel">
-  <div class="big">Position analysis</div>
-  <p id="result" class="muted">Make a move and tap Analyse position.</p>
-  <div id="variations"></div>
-  <div class="note">
-    Stockfish 19 Lite single-threaded engine. Analysis is performed locally
-    in your browser after the engine files load.
-  </div>
-</div>
-
-<div class="panel">
-  <div class="row">
-    <div class="big">Move history</div>
-    <div class="muted" id="count">0 plies</div>
-  </div>
-  <div id="moves" class="muted">No moves yet.</div>
-</div>
-
-<div class="panel">
-  <div class="big">Load a position</div>
-  <p class="muted">Paste a FEN string to inspect a position.</p>
-  <input id="fen" placeholder="Paste FEN here">
-  <div class="controls">
-    <button id="loadfen">Load FEN</button>
-    <button id="copyfen">Copy current FEN</button>
-  </div>
-</div>
-
-<p class="note">
-This is a standalone study and bot-game companion. It does not connect to
-Chess.com, read another app's screen or automate moves.
-</p>
+<section class="panel">
+ <div class="big">Load a position</div><p class="muted">Paste a FEN string to inspect a position.</p>
+ <input id="fen" placeholder="Paste FEN here" autocomplete="off">
+ <div class="controls"><button id="loadfen">Load FEN</button><button id="copyfen">Copy current FEN</button></div>
+</section>
+<p class="note">For offline study and games against a bot only. This app does not connect to Chess.com, read another app's screen or automate moves.</p>
 </main>
-
 <script>
 const files="abcdefgh";
-const glyph={
-  K:"♔",Q:"♕",R:"♖",B:"♗",N:"♘",P:"♙",
-  k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"
-};
-
-let game=new Chess();
-let selected=null;
-let sfWorker=null;
-let engineReady=false;
-let engineStarting=null;
-let analysisRunning=false;
-let bestMove=null;
-let analysisTimer=null;
-let latestLines={};
-
-const board=document.getElementById("board");
-const result=document.getElementById("result");
-const variations=document.getElementById("variations");
-const engineStatus=document.getElementById("engineStatus");
-const analyseButton=document.getElementById("analyse");
-const stopButton=document.getElementById("stop");
+const glyph={K:"♔",Q:"♕",R:"♖",B:"♗",N:"♘",P:"♙",k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"};
+let game=new Chess(),selected=null,bestMove=null;
+let sfWorker=null,sfReadyPromise=null,analysisRunning=false,analysisTimer=null,latestLines={};
+const board=document.getElementById("board"),result=document.getElementById("result");
+const variations=document.getElementById("variations"),engineStatus=document.getElementById("engineStatus");
+const analyseButton=document.getElementById("analyse"),stopButton=document.getElementById("stop");
 
 function render(){
-  board.innerHTML="";
-  const legal=selected
-    ?game.moves({square:selected,verbose:true}):[];
-
-  for(let r=0;r<8;r++){
-    for(let c=0;c<8;c++){
-      const sq=files[c]+(8-r);
-      const piece=game.get(sq);
-      const el=document.createElement("button");
-
-      el.className="sq "+((r+c)%2?"dark":"light");
-
-      if(selected===sq)el.classList.add("sel");
-      if(legal.some(m=>m.to===sq))
-        el.classList.add(piece?"capture":"dest");
-
-      if(bestMove){
-        if(bestMove.from===sq)el.classList.add("best-from");
-        if(bestMove.to===sq)el.classList.add("best-to");
-      }
-
-      el.textContent=piece
-        ?glyph[piece.color==="w"
-          ?piece.type.toUpperCase():piece.type]:"";
-
-      if(c===0){
-        const label=document.createElement("span");
-        label.className="coords";
-        label.textContent=8-r;
-        el.append(label);
-      }
-
-      el.addEventListener("click",()=>tap(sq));
-      board.append(el);
-    }
-  }
-
-  const turn=game.turn()==="w"?"White":"Black";
-  document.getElementById("turn").textContent=
-    game.isGameOver()?"Game finished":turn+" to move";
-
-  document.getElementById("status").textContent=
-    game.isCheckmate()?"Checkmate":
-    game.isDraw()?"Draw":
-    game.inCheck()?"Check":"";
-
-  const hist=game.history();
-  document.getElementById("moves").textContent=
-    hist.length
-      ?hist.map((m,i)=>(i%2===0?Math.floor(i/2)+1+". ":"")+m).join("  ")
-      :"No moves yet.";
-
-  document.getElementById("count").textContent=
-    hist.length+" plies";
+ board.innerHTML="";
+ const legal=selected?game.moves({square:selected,verbose:true}):[];
+ for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+  const sq=files[c]+(8-r),piece=game.get(sq),el=document.createElement("button");
+  el.className="sq "+((r+c)%2?"dark":"light");
+  if(selected===sq)el.classList.add("sel");
+  if(legal.some(m=>m.to===sq))el.classList.add(piece?"capture":"dest");
+  if(bestMove){if(bestMove.from===sq)el.classList.add("best-from");if(bestMove.to===sq)el.classList.add("best-to");}
+  if(piece)el.textContent=glyph[piece.color==="w"?piece.type.toUpperCase():piece.type];
+  if(c===0){const label=document.createElement("span");label.className="coords";label.textContent=8-r;el.append(label);}
+  el.setAttribute("aria-label",sq+(piece?" "+(piece.color==="w"?"white ":"black ")+piece.type:""));
+  el.addEventListener("click",()=>tap(sq));board.append(el);
+ }
+ const side=game.turn()==="w"?"White":"Black";
+ document.getElementById("turn").textContent=game.isGameOver()?"Game finished":side+" to move";
+ document.getElementById("status").textContent=game.isCheckmate()?"Checkmate":game.isDraw()?"Draw":game.inCheck()?"Check":"";
+ const hist=game.history();
+ document.getElementById("moves").textContent=hist.length?hist.map((m,i)=>(i%2===0?(Math.floor(i/2)+1)+". ":"")+m).join("  "):"No moves yet.";
+ document.getElementById("count").textContent=hist.length+" plies";
 }
-
 function clearAnalysis(){
-  bestMove=null;
-  latestLines={};
-  variations.innerHTML="";
-  render();
+ bestMove=null;latestLines={};variations.innerHTML="";render();
 }
-
 function tap(sq){
-  if(selected){
-    const moves=game.moves({square:selected,verbose:true});
-    const move=moves.find(m=>m.to===sq);
-
-    if(move){
-      let promotion;
-      if(move.flags.includes("p")){
-        promotion=(prompt("Promote to q, r, b or n?","q")||"q").toLowerCase();
-        if(!"qrbn".includes(promotion))promotion="q";
-      }
-
-      game.move({
-        from:selected,
-        to:sq,
-        promotion:promotion||"q"
-      });
-
-      selected=null;
-      clearAnalysis();
-      result.textContent="Position changed. Analyse again for a new evaluation.";
-      render();
-      return;
-    }
+ if(selected){
+  const candidate=game.moves({square:selected,verbose:true}).find(m=>m.to===sq);
+  if(candidate){
+   let promotion="q";
+   if(candidate.flags.includes("p")){promotion=(prompt("Promote to q, r, b or n?","q")||"q").toLowerCase();if(!"qrbn".includes(promotion))promotion="q";}
+   game.move({from:selected,to:sq,promotion});selected=null;haltAnalysis();clearAnalysis();
+   result.textContent="Position changed. Analyse again for a fresh evaluation.";render();return;
   }
-
-  const piece=game.get(sq);
-  selected=piece&&piece.color===game.turn()?sq:null;
-  render();
+ }
+ const piece=game.get(sq);selected=piece&&piece.color===game.turn()?sq:null;render();
 }
-
-function stopAnalysis(){
-  if(sfWorker&&analysisRunning){
-    sfWorker.postMessage("stop");
-  }
-  analysisRunning=false;
-  clearTimeout(analysisTimer);
-  analyseButton.disabled=false;
-  stopButton.disabled=true;
-  engineStatus.textContent="Analysis stopped";
+function haltAnalysis(){
+ if(sfWorker&&analysisRunning)sfWorker.postMessage("stop");
+ analysisRunning=false;clearTimeout(analysisTimer);
+ analyseButton.disabled=false;stopButton.disabled=true;
 }
-
 function startStockfish(){
-  if(engineReady)return Promise.resolve();
-  if(engineStarting)return engineStarting;
-
-  engineStarting=new Promise((resolve,reject)=>{
-    const base="https://cdn.jsdelivr.net/npm/stockfish@19.0.1/bin/";
-    const workerUrl=base+"stockfish-19-lite-single.js";
-
-    try{
-      sfWorker=new Worker(workerUrl);
-    }catch(error){
-      engineStarting=null;
-      reject(error);
-      return;
-    }
-
-    const timeout=setTimeout(()=>{
-      engineStarting=null;
-      reject(new Error("Engine initialisation timed out"));
-    },60000);
-
-    sfWorker.onmessage=(event)=>{
-      const line=String(event.data);
-
-      if(line==="uciok"){
-        sfWorker.postMessage("isready");
-      }
-
-      if(line==="readyok"){
-        clearTimeout(timeout);
-        engineReady=true;
-        engineStarting=null;
-        engineStatus.textContent="Stockfish 19 Lite ready";
-        resolve();
-      }
-
-      const info=line.match(
-        /info depth (\d+).*?multipv (\d+).*?score (cp|mate) (-?\d+).*? pv (.+)/
-      );
-
-      if(info){
-        const depth=Number(info[1]);
-        const number=Number(info[2]);
-        const type=info[3];
-        const score=Number(info[4]);
-        const pv=info[5].trim();
-
-        latestLines[number]={
-          depth,
-          type,
-          score,
-          pv
-        };
-
-        showVariations();
-      }
-
-      const best=line.match(/^bestmove\s+(\S+)/);
-      if(best){
-        analysisRunning=false;
-        analyseButton.disabled=false;
-        stopButton.disabled=true;
-        clearTimeout(analysisTimer);
-        engineStatus.textContent="Analysis complete";
-
-        const move=best[1];
-        if(move&&move!=="(none)"&&move.length>=4){
-          bestMove={
-            from:move.slice(0,2),
-            to:move.slice(2,4)
-          };
-          render();
-        }
-      }
-    };
-
-    sfWorker.onerror=(error)=>{
-      clearTimeout(timeout);
-      engineStarting=null;
-      engineReady=false;
-      reject(error);
-    };
-
-    sfWorker.postMessage("uci");
-  });
-
-  return engineStarting;
+ if(sfReadyPromise)return sfReadyPromise;
+ sfReadyPromise=new Promise((resolve,reject)=>{
+  const base="https://cdn.jsdelivr.net/npm/stockfish@19.0.1/bin/";
+  const workerCode='self.Module={locateFile:p=>"'+base+'"+p};'+'importScripts("'+base+'stockfish-19-lite-single.js");';
+  const blob=new Blob([workerCode],{type:"text/javascript"});
+  sfWorker=new Worker(URL.createObjectURL(blob));
+  const timeout=setTimeout(()=>reject(new Error("Engine loading timed out")),60000);
+  sfWorker.onmessage=event=>{
+   const line=String(event.data);
+   if(line==="uciok")sfWorker.postMessage("isready");
+   if(line==="readyok"){clearTimeout(timeout);engineStatus.textContent="Stockfish 19 Lite ready";resolve();}
+   const info=line.match(/info depth (\d+).*?multipv (\d+).*?score (cp|mate) (-?\d+).*? pv (.+)/);
+   if(info){
+    latestLines[Number(info[2])]={depth:Number(info[1]),type:info[3],score:Number(info[4]),pv:info[5].trim()};
+    showVariations();
+   }
+   const best=line.match(/^bestmove\s+(\S+)/);
+   if(best){
+    analysisRunning=false;clearTimeout(analysisTimer);analyseButton.disabled=false;stopButton.disabled=true;
+    engineStatus.textContent="Analysis complete";
+    if(best[1]&&best[1]!=="(none)"&&best[1].length>=4)bestMove={from:best[1].slice(0,2),to:best[1].slice(2,4)};
+    render();
+   }
+  };
+  sfWorker.onerror=err=>{clearTimeout(timeout);sfReadyPromise=null;reject(err);};
+  sfWorker.postMessage("uci");
+ });
+ return sfReadyPromise;
 }
-
 function showVariations(){
-  const numbers=Object.keys(latestLines)
-    .map(Number).sort((a,b)=>a-b);
-
-  if(!numbers.length)return;
-
-  const side=game.turn()==="w"?"White":"Black";
-  const html=numbers.map(number=>{
-    const line=latestLines[number];
-    const score=line.type==="cp"
-      ?(line.score/100).toFixed(2)+" pawns"
-      :"mate in "+line.score;
-
-    return `
-      <div class="variation">
-        <strong>Variation ${number}</strong>
-        · Depth ${line.depth}
-        · ${score}
-        <br>${line.pv}
-      </div>`;
-  }).join("");
-
-  variations.innerHTML=html;
-  result.textContent="Evaluation from "+side+"'s point of view.";
+ const nums=Object.keys(latestLines).map(Number).sort((a,b)=>a-b);
+ variations.innerHTML=nums.map(n=>{
+  const v=latestLines[n],score=v.type==="cp"?(v.score/100).toFixed(2)+" pawns":"mate in "+v.score;
+  return '<div class="variation"><strong>Line '+n+'</strong> · Depth '+v.depth+' · '+score+'<br>'+escapeHtml(v.pv)+'</div>';
+ }).join("");
+ if(nums.length)result.textContent="Evaluation from "+(game.turn()==="w"?"White":"Black")+"'s point of view.";
 }
-
+function escapeHtml(str){return str.replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
 async function analysePosition(){
-  stopAnalysis();
-  clearAnalysis();
-
-  result.textContent="Loading Stockfish 19 Lite…";
-  engineStatus.textContent="Loading engine files…";
-  analyseButton.disabled=true;
-
-  try{
-    await startStockfish();
-
-    latestLines={};
-    bestMove=null;
-    render();
-
-    sfWorker.postMessage("setoption name MultiPV value 3");
-    sfWorker.postMessage("position fen "+game.fen());
-
-    analysisRunning=true;
-    stopButton.disabled=false;
-    engineStatus.textContent="Analysing position…";
-    result.textContent="Stockfish is calculating three variations.";
-
-    sfWorker.postMessage("go movetime 12000");
-
-    analysisTimer=setTimeout(()=>{
-      if(analysisRunning)stopAnalysis();
-    },15000);
-
-  }catch(error){
-    analysisRunning=false;
-    analyseButton.disabled=false;
-    stopButton.disabled=true;
-    engineStatus.textContent="Engine could not start";
-    result.textContent=
-      "Could not start Stockfish. Check your internet connection and refresh the page. "+error.message;
-  }
+ haltAnalysis();clearAnalysis();result.textContent="Loading Stockfish 19 Lite…";engineStatus.textContent="Loading engine files…";analyseButton.disabled=true;
+ try{
+  await startStockfish();
+  latestLines={};bestMove=null;render();
+  sfWorker.postMessage("setoption name MultiPV value 3");
+  sfWorker.postMessage("position fen "+game.fen());
+  analysisRunning=true;stopButton.disabled=false;engineStatus.textContent="Analysing position…";
+  result.textContent="Stockfish is calculating three variations.";
+  const seconds=Number(document.getElementById("analysisTime").value);
+  sfWorker.postMessage("go movetime "+seconds*1000);
+  analysisTimer=setTimeout(()=>{if(analysisRunning)haltAnalysis();},(seconds+5)*1000);
+ }catch(error){
+  analysisRunning=false;analyseButton.disabled=false;stopButton.disabled=true;
+  engineStatus.textContent="Engine could not start";
+  result.textContent="Could not start Stockfish. Check your connection and refresh. "+error.message;
+ }
 }
-
-document.getElementById("undo").onclick=()=>{
-  stopAnalysis();
-  game.undo();
-  selected=null;
-  clearAnalysis();
-  result.textContent="Move undone. Analyse again for a new evaluation.";
-  render();
-};
-
-document.getElementById("reset").onclick=()=>{
-  stopAnalysis();
-  game.reset();
-  selected=null;
-  clearAnalysis();
-  result.textContent="New game started.";
-  render();
-};
-
+document.getElementById("undo").onclick=()=>{haltAnalysis();game.undo();selected=null;clearAnalysis();result.textContent="Move undone. Analyse again for a fresh evaluation.";};
+document.getElementById("reset").onclick=()=>{haltAnalysis();game.reset();selected=null;clearAnalysis();result.textContent="New game started.";};
 document.getElementById("loadfen").onclick=()=>{
-  try{
-    stopAnalysis();
-    const next=new Chess(document.getElementById("fen").value.trim());
-    if(!next.validate_fen(document.getElementById("fen").value.trim()).valid){
-      throw new Error("Invalid FEN");
-    }
-    game=next;
-    selected=null;
-    clearAnalysis();
-    result.textContent="Position loaded. Analyse when ready.";
-    render();
-  }catch(error){
-    alert("That FEN is invalid. Please check it and try again.");
-  }
+ try{
+  haltAnalysis();const fenText=document.getElementById("fen").value.trim();
+  const validation=new Chess().validate_fen(fenText);if(!validation.valid)throw new Error("Invalid FEN");
+  game=new Chess(fenText);selected=null;clearAnalysis();result.textContent="Position loaded. Analyse when ready.";
+ }catch(e){alert("That FEN is invalid. Please check it and try again.");}
 };
-
 document.getElementById("copyfen").onclick=async()=>{
-  try{
-    await navigator.clipboard.writeText(game.fen());
-    result.textContent="FEN copied.";
-  }catch(error){
-    result.textContent=game.fen();
-  }
+ try{await navigator.clipboard.writeText(game.fen());result.textContent="FEN copied to clipboard.";}
+ catch(e){result.textContent=game.fen();}
 };
-
 analyseButton.onclick=analysePosition;
-stopButton.onclick=stopAnalysis;
-
+stopButton.onclick=()=>{haltAnalysis();engineStatus.textContent="Analysis stopped";};
 render();
 </script>
 </body>
