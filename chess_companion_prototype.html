@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#17212b">
+<title>Chess Companion</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#111820;--panel:#1b2732;--muted:#9eacb8;--accent:#73c5a3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f4f6f8;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:560px;margin:auto;padding:18px 14px 30px}
+h1{font-size:24px;margin:4px 0 5px}.sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+.panel{background:var(--panel);border:1px solid #344351;border-radius:14px;padding:13px;margin:12px 0}
+#board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;border:3px solid #293642;border-radius:5px;overflow:hidden;touch-action:manipulation}
+.sq{display:flex;align-items:center;justify-content:center;position:relative;font-size:clamp(27px,9vw,54px);padding:0;border:0;border-radius:0}
+.light{background:#e9dfc9;color:#20252b}.dark{background:#789477;color:#20252b}
+.sq.sel{box-shadow:inset 0 0 0 4px #f4d35e}.sq.dest:after{content:"";width:23%;height:23%;border-radius:50%;background:#1a352b88;position:absolute}
+.sq.capture:after{content:"";position:absolute;inset:4px;border:4px solid #1a352b88;border-radius:50%}
+.coords{position:absolute;left:4px;top:2px;font-size:10px;opacity:.65}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{background:#2c3b48;color:#fff;border:1px solid #465867;border-radius:10px;padding:10px 13px;font-size:14px}
+button.primary{background:#25634f;border-color:#39846c}
+button:disabled{opacity:.4}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.muted{color:var(--muted);font-size:13px}.big{font-size:18px;font-weight:650}
+#result{line-height:1.45;min-height:42px}#moves{font-size:13px;line-height:1.7;max-height:110px;overflow:auto;color:#d3dbe1}
+input{width:100%;background:#101820;color:white;border:1px solid #465867;border-radius:8px;padding:10px;font-size:14px}
+.note{font-size:12px;line-height:1.45;color:var(--muted)}
+</style>
+</head>
+<body><main>
+<h1>Chess Companion</h1>
+<div class="sub">iPhone-friendly board and position analyser · prototype 1</div>
+<div class="panel">
+ <div class="row"><div class="big" id="turn">White to move</div><div class="muted" id="status">Starting position</div></div>
+ <div id="board" aria-label="Chessboard"></div>
+ <div class="controls">
+  <button id="undo">Undo</button><button id="reset">New game</button><button class="primary" id="analyse">Analyse position</button>
+ </div>
+</div>
+<div class="panel">
+ <div class="big">Position analysis</div>
+ <p id="result" class="muted">Make moves on the board, then tap Analyse position. The prototype checks Lichess's public cloud-evaluation cache; not every position will have a cached result.</p>
+ <div class="note">Cloud evaluation is not a guaranteed live Stockfish calculation. If no cached analysis exists, the app will say so rather than invent a best move.</div>
+</div>
+<div class="panel">
+ <div class="row"><div class="big">Move history</div><div class="muted" id="count">0 plies</div></div>
+ <div id="moves" class="muted">No moves yet.</div>
+</div>
+<div class="panel">
+ <div class="big">Load a position</div>
+ <p class="muted">Paste a FEN string to inspect a position from a game.</p>
+ <input id="fen" placeholder="Paste FEN here">
+ <div class="controls"><button id="loadfen">Load FEN</button><button id="copyfen">Copy current FEN</button></div>
+</div>
+<p class="note">This is a standalone prototype, not connected to Chess.com and does not read your iPhone screen. For bot games and offline study only. It does not automate moves.</p>
+</main>
+<script>
+const files="abcdefgh", glyph={K:"♔",Q:"♕",R:"♖",B:"♗",N:"♘",P:"♙",k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"};
+let game=new Chess(),selected=null,history=[];
+const board=document.getElementById("board");
+function render(){
+ board.innerHTML="";
+ const legal=selected?game.moves({square:selected,verbose:true}):[];
+ for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+  const sq=files[c]+(8-r),p=game.get(sq),el=document.createElement("button");
+  el.className="sq "+((r+c)%2?"dark":"light")+(selected===sq?" sel":"")+(legal.some(m=>m.to===sq)?" "+(p?"capture":"dest"):"");
+  el.textContent=p?glyph[p.color==="w"?p.type.toUpperCase():p.type]:"";
+  if(c===0){const span=document.createElement("span");span.className="coords";span.textContent=8-r;el.append(span)}
+  el.addEventListener("click",()=>tap(sq));board.append(el);
+ }
+ const turn=game.turn()==="w"?"White":"Black";
+ document.getElementById("turn").textContent=game.isGameOver()?"Game finished":turn+" to move";
+ document.getElementById("status").textContent=game.isCheckmate()?"Checkmate":game.isDraw()?"Draw":game.inCheck()?"Check":"";
+ const hist=game.history();
+ document.getElementById("moves").textContent=hist.length?hist.map((m,i)=>(i%2===0?Math.floor(i/2)+1+". ":"")+m).join("  "):"No moves yet.";
+ document.getElementById("count").textContent=hist.length+" plies";
+}
+function tap(sq){
+ if(selected){
+  const moves=game.moves({square:selected,verbose:true});
+  const m=moves.find(x=>x.to===sq);
+  if(m){
+   let promotion;
+   if(m.flags.includes("p")){promotion=(prompt("Promote to q, r, b or n?","q")||"q").toLowerCase();if(!"qrbn".includes(promotion))promotion="q";}
+   game.move({from:selected,to:sq,promotion:promotion||"q"});selected=null;render();return;
+  }
+ }
+ const p=game.get(sq);
+ selected=p&&p.color===game.turn()?sq:null;render();
+}
+document.getElementById("undo").onclick=()=>{game.undo();selected=null;render()};
+document.getElementById("reset").onclick=()=>{game.reset();selected=null;document.getElementById("result").textContent="New game started.";render()};
+document.getElementById("loadfen").onclick=()=>{try{game=new Chess(document.getElementById("fen").value.trim());selected=null;document.getElementById("result").textContent="Position loaded.";render()}catch(e){alert("That FEN is invalid.")}};
+document.getElementById("copyfen").onclick=async()=>{try{await navigator.clipboard.writeText(game.fen());document.getElementById("result").textContent="FEN copied."}catch(e){document.getElementById("result").textContent=game.fen()}};
+document.getElementById("analyse").onclick=async()=>{
+ const out=document.getElementById("result");out.textContent="Checking public cloud-evaluation cache…";
+ try{
+  const url="https://lichess.org/api/cloud-eval?fen="+encodeURIComponent(game.fen())+"&multiPv=3";
+  const res=await fetch(url,{headers:{Accept:"application/json"}});
+  if(res.status===404){out.textContent="No cached analysis for this exact position. Try a more common opening position or load a position with an available evaluation.";return}
+  if(!res.ok)throw new Error("Analysis service returned "+res.status);
+  const data=await res.json();
+  const lines=(data.pvs||[]).map((pv,i)=>`${i+1}. ${pv.moves.split(" ").slice(0,5).join(" ")} · ${pv.cp!==undefined?(pv.cp/100).toFixed(2)+" pawns": "mate in "+pv.mate}`);
+  out.textContent=(data.depth?"Depth "+data.depth+" · ":"")+"Cached engine lines: "+(lines.join(" | ")||"No principal variations returned.");
+ }catch(e){out.textContent="Could not reach the analysis service. Check your internet connection and try again. ("+e.message+")"}
+};
+render();
+</script></body></html>
