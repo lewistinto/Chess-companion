@@ -164,7 +164,7 @@ function showVariations(){
 }
 function escapeHtml(str){return str.replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
 async function analysePosition(){
- haltAnalysis();clearAnalysis();result.textContent="Loading Stockfish 19 Lite…";engineStatus.textContent="Loading engine files…";analyseButton.disabled=true;
+ engineStatus.textContent="Step 1: Analysis function started";result.textContent="Preparing engine...";haltAnalysis();engineStatus.textContent="Step 2: Preparing Stockfish";clearAnalysis();
  try{
   await startStockfish();
   latestLines={};bestMove=null;render();
