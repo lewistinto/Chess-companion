@@ -1,40 +1,40 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>Chess Companion</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#111820;color:#fff;font-family:Arial,sans-serif}
+body{margin:0;background:#111820;color:white;font-family:Arial,sans-serif}
 main{max-width:620px;margin:auto;padding:16px}
-h1{font-size:26px;margin:5px 0}
+h1{font-size:26px}
 p{color:#b8c3cc;font-size:14px}
 .panel{background:#1c2934;border:1px solid #394957;border-radius:14px;padding:14px;margin:13px 0}
-#board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;margin:12px auto;border:3px solid #34434e}
-.square{border:0;border-radius:0;padding:0;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:clamp(27px,9vw,54px);position:relative}
-.light{background:#e9dfc9;color:#111}
-.dark{background:#789477;color:#111}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.controls button{flex:1}
+button,select,input{font-size:15px;padding:12px;border-radius:9px;border:1px solid #536575;background:#30414e;color:white}
+button:disabled{opacity:.4}
+.primary{background:#24664f}
+.colour-choice{font-weight:bold;min-height:48px}
+.colour-choice.active{background:#24664f;border:2px solid #83d6ae}
+#board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;margin:12px auto;border:3px solid #34434e;touch-action:none;user-select:none;-webkit-user-select:none}
+.square{aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;font-size:clamp(27px,9vw,54px);padding:0;touch-action:none;cursor:pointer}
+.light{background:#e9dfc9}
+.dark{background:#789477}
+.white-piece{color:#fff!important;-webkit-text-stroke:1px #333;text-shadow:0 1px 2px #333}
+.black-piece{color:#111!important;-webkit-text-stroke:.5px #aaa}
 .selected{box-shadow:inset 0 0 0 4px #f5cf55}
 .target:after{content:"";width:23%;height:23%;border-radius:50%;background:#173b2b99;position:absolute}
 .bestfrom{box-shadow:inset 0 0 0 4px #e9b949}
 .bestto{box-shadow:inset 0 0 0 5px #37d58a}
-button,select,input{font-size:15px;padding:11px;border-radius:9px;border:1px solid #536575;background:#30414e;color:white}
-button:disabled{opacity:.4}
-button.primary{background:#24664f}
-.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.controls button{flex:1}
-.colour-choice{font-weight:bold;min-height:46px}
-.colour-choice.active{background:#24664f;border:2px solid #83d6ae}
-select{max-width:100%}
-input{width:100%;margin-top:8px}
 #history{font-size:14px;line-height:1.8;max-height:170px;overflow:auto;white-space:pre-wrap}
 #analysis{font-size:14px;line-height:1.6;overflow-wrap:anywhere}
 .line{padding:9px 0;border-top:1px solid #3b4a56}
 .status{color:#83d6ae;font-size:13px;margin-top:8px}
 .small{font-size:12px;color:#aebbc5}
+input{width:100%;margin-top:8px}
 </style>
 </head>
 <body>
@@ -49,14 +49,13 @@ input{width:100%;margin-top:8px}
 <button id="playBlack" class="colour-choice">PLAY BLACK</button>
 </div>
 <p id="colourStatus">You are playing White.</p>
-
 <div id="board"></div>
 <div class="controls">
 <button id="undo">Undo move</button>
 <button id="reset">New game</button>
 </div>
 <p id="turn">White to move</p>
-<p class="small">Enter both players' moves manually. No moves are played automatically.</p>
+<p class="small">Tap a piece, then tap its highlighted destination. Both players' moves are entered manually.</p>
 </section>
 
 <section class="panel">
@@ -92,12 +91,15 @@ input{width:100%;margin-top:8px}
 <button id="copyFen">Copy FEN</button>
 </div>
 </section>
-
-<p class="small">For friendly games and post-game review.</p>
 </main>
 
 <script>
 "use strict";
+
+if(typeof Chess==="undefined"){
+ document.body.innerHTML="<h2 style='padding:20px;color:white'>Chess library failed to load. Please refresh the page.</h2>";
+ throw new Error("Chess.js failed to load");
+}
 
 const glyph={
  K:"♔",Q:"♕",R:"♖",B:"♗",N:"♘",P:"♙",
@@ -129,9 +131,13 @@ function render(){
   for(let c=0;c<8;c++){
    const square=files[c]+(8-r);
    const piece=game.get(square);
-   const el=document.createElement("button");
+   const el=document.createElement("div");
 
    el.className="square "+((r+c)%2?"dark":"light");
+   el.dataset.square=square;
+   el.setAttribute("role","button");
+   el.setAttribute("aria-label",square);
+
    if(selected===square)el.classList.add("selected");
    if(legal.some(m=>m.to===square))el.classList.add("target");
 
@@ -140,12 +146,11 @@ function render(){
     if(bestMove.to===square)el.classList.add("bestto");
    }
 
-   if(piece)el.textContent=glyph[
-    piece.color==="w"?piece.type.toUpperCase():piece.type
-   ];
+   if(piece){
+    el.textContent=glyph[piece.color==="w"?piece.type.toUpperCase():piece.type];
+    el.classList.add(piece.color==="w"?"white-piece":"black-piece");
+   }
 
-   el.setAttribute("aria-label",square);
-   el.addEventListener("click",()=>squareClick(square));
    board.appendChild(el);
   }
  }
@@ -157,34 +162,49 @@ function render(){
  updateHistory();
 }
 
-function updateHistory(){
- const moves=game.history();
- let output="";
- for(let i=0;i<moves.length;i+=2){
-  output+=(Math.floor(i/2)+1)+". "+moves[i];
-  if(moves[i+1])output+="   "+moves[i+1];
-  output+="\n";
- }
- document.getElementById("history").textContent=
-  output||"No moves yet.";
-}
-
-function squareClick(square){
- if(game.isGameOver())return;
+/* One delegated touch handler for the entire board */
+function handleSquare(square){
+ if(!square||game.isGameOver())return;
 
  if(selected){
-  const possible=game.moves({square:selected,verbose:true});
-  const move=possible.find(m=>m.to===square);
+  const legal=game.moves({square:selected,verbose:true});
+  const destination=legal.find(m=>m.to===square);
 
-  if(move){
-   makeMove(selected,square,move.flags.includes("p"));
+  if(destination){
+   makeMove(selected,square,destination.flags.includes("p"));
    return;
   }
  }
 
  const piece=game.get(square);
- selected=piece&&piece.color===game.turn()?square:null;
+
+ if(piece&&piece.color===game.turn()){
+  selected=square;
+ }else{
+  selected=null;
+ }
+
  render();
+}
+
+board.addEventListener("pointerup",function(event){
+ const square=event.target.closest("[data-square]");
+ if(!square)return;
+ event.preventDefault();
+ handleSquare(square.dataset.square);
+});
+
+function updateHistory(){
+ const moves=game.history();
+ let output="";
+
+ for(let i=0;i<moves.length;i+=2){
+  output+=(Math.floor(i/2)+1)+". "+moves[i];
+  if(moves[i+1])output+="   "+moves[i+1];
+  output+="\n";
+ }
+
+ document.getElementById("history").textContent=output||"No moves yet.";
 }
 
 function makeMove(from,to,promotion){
@@ -195,12 +215,7 @@ function makeMove(from,to,promotion){
   if(!"qrbn".includes(promote))promote="q";
  }
 
- const move=game.move({
-  from:from,
-  to:to,
-  promotion:promote
- });
-
+ const move=game.move({from:from,to:to,promotion:promote});
  if(!move)return;
 
  selected=null;
@@ -233,106 +248,118 @@ function stopAnalysis(){
  stopButton.disabled=true;
 }
 
-function startEngine(){
+async function startEngine(){
  if(readyPromise)return readyPromise;
 
- readyPromise=new Promise((resolve,reject)=>{
-  let settled=false;
+ readyPromise=(async()=>{
+  const base="https://cdn.jsdelivr.net/npm/stockfish@19.0.1/bin/";
+  const scriptURL=base+"stockfish-19-lite-single.js";
 
-  const timeout=setTimeout(()=>{
-   if(!settled){
-    settled=true;
-    readyPromise=null;
-    if(worker){worker.terminate();worker=null;}
-    reject(new Error("Engine timed out after 30 seconds. Check your internet connection and try again."));
-   }
-  },30000);
+  engineStatus.textContent="Downloading Stockfish engine…";
 
-  try{
-   const base="https://cdn.jsdelivr.net/npm/stockfish@19.0.1/bin/";
-   const code='importScripts("'+base+'stockfish-19-asm.js");';
-   const blob=new Blob([code],{type:"text/javascript"});
-   const blobUrl=URL.createObjectURL(blob);
+  const response=await fetch(scriptURL);
 
-   worker=new Worker(blobUrl);
-   URL.revokeObjectURL(blobUrl);
-
-   worker.onerror=function(event){
-    clearTimeout(timeout);
-    if(!settled){
-     settled=true;
-     readyPromise=null;
-     if(worker){worker.terminate();worker=null;}
-     reject(new Error("Engine worker error: "+(event.message||"Could not load Stockfish.")));
-    }else{
-     engineStatus.textContent="Engine error: "+(event.message||"Worker failed");
-    }
-   };
-
-   worker.onmessage=function(event){
-    const line=String(event.data);
-
-    if(line==="uciok"){
-     engineStatus.textContent="Engine loaded. Checking readiness…";
-     worker.postMessage("isready");
-    }
-
-    if(line==="readyok"&&!settled){
-     settled=true;
-     clearTimeout(timeout);
-     engineStatus.textContent="Stockfish 19 ready";
-     resolve();
-    }
-
-    const info=line.match(
-     /info depth (\d+).*?multipv (\d+).*?score (cp|mate) (-?\d+).*? pv (.+)/
-    );
-
-    if(info){
-     latestLines[Number(info[2])]={
-      depth:Number(info[1]),
-      type:info[3],
-      score:Number(info[4]),
-      pv:info[5].trim()
-     };
-     displayLines();
-    }
-
-    const best=line.match(/^bestmove\s+(\S+)/);
-
-    if(best){
-     searching=false;
-     clearTimeout(analysisTimer);
-     analyseButton.disabled=false;
-     stopButton.disabled=true;
-
-     if(best[1]&&best[1]!=="(none)"&&best[1].length>=4){
-      bestMove={
-       from:best[1].slice(0,2),
-       to:best[1].slice(2,4)
-      };
-     }
-
-     engineStatus.textContent="Analysis complete";
-     render();
-    }
-   };
-
-   worker.postMessage("uci");
-
-  }catch(error){
-   clearTimeout(timeout);
-   readyPromise=null;
-   reject(error);
+  if(!response.ok){
+   throw new Error("Could not download Stockfish JavaScript: HTTP "+response.status);
   }
- });
 
- return readyPromise;
+  const engineCode=await response.text();
+
+  engineStatus.textContent="Preparing engine worker…";
+
+  const bootstrap=
+   'self.Module={locateFile:function(p){return "'+base+'"+p;}};\n';
+
+  const blob=new Blob([bootstrap,engineCode],{type:"text/javascript"});
+  const localURL=URL.createObjectURL(blob);
+
+  worker=new Worker(localURL);
+
+  worker.onerror=function(event){
+   engineStatus.textContent="Engine worker error";
+   analysis.textContent="Worker error: "+(event.message||"Engine failed.");
+  };
+
+  worker.onmessage=function(event){
+   const line=String(event.data);
+
+   if(line==="uciok"){
+    engineStatus.textContent="Engine downloaded. Checking readiness…";
+    worker.postMessage("isready");
+   }
+
+   if(line==="readyok"){
+    engineStatus.textContent="Stockfish 19 ready";
+   }
+
+   const info=line.match(
+    /info depth (\d+).*?multipv (\d+).*?score (cp|mate) (-?\d+).*? pv (.+)/
+   );
+
+   if(info){
+    latestLines[Number(info[2])]={
+     depth:Number(info[1]),
+     type:info[3],
+     score:Number(info[4]),
+     pv:info[5].trim()
+    };
+    displayLines();
+   }
+
+   const best=line.match(/^bestmove\s+(\S+)/);
+
+   if(best){
+    searching=false;
+    clearTimeout(analysisTimer);
+    analyseButton.disabled=false;
+    stopButton.disabled=true;
+
+    if(best[1]&&best[1]!=="(none)"&&best[1].length>=4){
+     bestMove={from:best[1].slice(0,2),to:best[1].slice(2,4)};
+    }
+
+    engineStatus.textContent="Analysis complete";
+    render();
+   }
+  };
+
+  worker.postMessage("uci");
+
+  await new Promise((resolve,reject)=>{
+   const started=Date.now();
+
+   const check=setInterval(()=>{
+    if(worker&&engineStatus.textContent==="Stockfish 19 ready"){
+     clearInterval(check);
+     resolve();
+    }else if(Date.now()-started>30000){
+     clearInterval(check);
+     reject(new Error("Engine did not become ready within 30 seconds."));
+    }
+   },200);
+  });
+
+  return worker;
+ })();
+
+ try{
+  return await readyPromise;
+ }catch(error){
+  readyPromise=null;
+  if(worker){worker.terminate();worker=null;}
+  throw error;
+ }
+}
+
+function escapeHtml(value){
+ return String(value).replace(/[&<>"']/g,ch=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",
+  '"':"&quot;","'":"&#39;"
+ })[ch]);
 }
 
 function displayLines(){
  const lines=Object.keys(latestLines).map(Number).sort((a,b)=>a-b);
-
  if(!lines.length)return;
 
  analysis.innerHTML=lines.map(n=>{
@@ -346,7 +373,6 @@ function displayLines(){
    if(game.turn()==="b")pawns=-pawns;
    if(myColour==="b")pawns=-pawns;
    score=(pawns>0?"+":"")+pawns.toFixed(2);
-   score+=" ("+(pawns>0?"advantage":"disadvantage")+")";
   }
 
   return '<div class="line"><strong>Variation '+n+
@@ -356,21 +382,12 @@ function displayLines(){
  }).join("");
 }
 
-function escapeHtml(value){
- return String(value).replace(/[&<>"']/g,function(ch){
-  return {
-   "&":"&amp;","<":"&lt;",">":"&gt;",
-   '"':"&quot;","'":"&#39;"
-  }[ch];
- });
-}
-
 async function analysePosition(){
  stopAnalysis();
  bestMove=null;
  latestLines={};
- analysis.innerHTML="Preparing Stockfish engine…";
- engineStatus.textContent="Loading Stockfish files…";
+ analysis.innerHTML="Starting Stockfish…";
+ engineStatus.textContent="Starting engine…";
  analyseButton.disabled=true;
 
  try{
@@ -382,15 +399,13 @@ async function analysePosition(){
   searching=true;
   stopButton.disabled=false;
   engineStatus.textContent="Analysing position…";
-  analysis.innerHTML="Calculating three candidate variations…";
+  analysis.textContent="Calculating three candidate variations…";
 
   const seconds=Number(document.getElementById("analysisTime").value);
-  worker.postMessage("go movetime "+(seconds*1000));
+  worker.postMessage("go movetime "+seconds*1000);
 
   analysisTimer=setTimeout(()=>{
-   if(searching){
-    worker.postMessage("stop");
-   }
+   if(searching)worker.postMessage("stop");
   },(seconds+8)*1000);
 
  }catch(error){
@@ -402,14 +417,14 @@ async function analysePosition(){
  }
 }
 
-analyseButton.addEventListener("click",analysePosition);
+analyseButton.onclick=analysePosition;
 
-stopButton.addEventListener("click",()=>{
+stopButton.onclick=()=>{
  stopAnalysis();
  engineStatus.textContent="Analysis stopped";
-});
+};
 
-document.getElementById("undo").onclick=function(){
+document.getElementById("undo").onclick=()=>{
  stopAnalysis();
  if(game.undo()){
   selected=null;
@@ -420,25 +435,24 @@ document.getElementById("undo").onclick=function(){
  }
 };
 
-document.getElementById("reset").onclick=function(){
+document.getElementById("reset").onclick=()=>{
  stopAnalysis();
  game.reset();
  selected=null;
  bestMove=null;
  latestLines={};
- analysis.textContent="New game started. Enter moves and analyse when ready.";
+ analysis.textContent="New game started.";
  engineStatus.textContent=worker?"Stockfish ready":"Engine not started";
  render();
 };
 
-document.getElementById("loadFen").onclick=function(){
+document.getElementById("loadFen").onclick=()=>{
  const fen=document.getElementById("fen").value.trim();
 
  try{
   stopAnalysis();
   const test=new Chess();
   const validation=test.validate_fen(fen);
-
   if(!validation.valid)throw new Error("Invalid FEN");
 
   game=new Chess(fen);
@@ -447,13 +461,12 @@ document.getElementById("loadFen").onclick=function(){
   latestLines={};
   analysis.textContent="Position loaded. Analyse when ready.";
   render();
-
  }catch(error){
-  alert("Invalid FEN. Please check the position and try again.");
+  alert("Invalid FEN. Please check the position.");
  }
 };
 
-document.getElementById("copyFen").onclick=async function(){
+document.getElementById("copyFen").onclick=async()=>{
  try{
   await navigator.clipboard.writeText(game.fen());
   alert("FEN copied.");
@@ -462,14 +475,13 @@ document.getElementById("copyFen").onclick=async function(){
  }
 };
 
-document.getElementById("copyHistory").onclick=async function(){
- const text=game.history().join(" ");
-
+document.getElementById("copyHistory").onclick=async()=>{
+ const moves=game.history().join(" ");
  try{
-  await navigator.clipboard.writeText(text);
+  await navigator.clipboard.writeText(moves);
   alert("Move history copied.");
  }catch(error){
-  alert(text||"No moves to copy.");
+  alert(moves||"No moves yet.");
  }
 };
 
