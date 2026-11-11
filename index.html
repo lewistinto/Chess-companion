@@ -106,5 +106,66 @@ document.getElementById("analyse").onclick=async()=>{
   out.textContent=(data.depth?"Depth "+data.depth+" · ":"")+"Cached engine lines: "+(lines.join(" | ")||"No principal variations returned.");
  }catch(e){out.textContent="Could not reach the analysis service. Check your internet connection and try again. ("+e.message+")"}
 };
-render();
+// Stockfish 19 Lite - single-threaded engine
+let sfWorker = null;
+let sfReadyPromise = null;
+
+function startStockfish() {
+  if (sfReadyPromise) return sfReadyPromise;
+
+  sfReadyPromise = new Promise((resolve, reject) => {
+    const base = "https://cdn.jsdelivr.net/npm/stockfish@19.0.1/bin/";
+    const workerCode =
+      'self.Module={locateFile:p=>"' + base + '"+p};' +
+      'importScripts("' + base + 'stockfish-19-lite-single.js");';
+
+    const blob = new Blob([workerCode], {type:"text/javascript"});
+    sfWorker = new Worker(URL.createObjectURL(blob));
+
+    sfWorker.onmessage = event => {
+      const line = String(event.data);
+
+      if (line === "uciok") sfWorker.postMessage("isready");
+      if (line === "readyok") resolve();
+
+      const match = line.match(
+        /info depth (\d+).*?multipv (\d+).*?score (cp|mate) (-?\d+).*? pv (.+)/
+      );
+
+      if (match) {
+        const [, depth, variation, type, score, moves] = match;
+        const value = type === "cp"
+          ? (Number(score) / 100).toFixed(2) + " pawns"
+          : "mate in " + score;
+
+        const output = document.getElementById("result");
+        output.textContent =
+          "Stockfish 19 Lite · Depth " + depth +
+          "\nVariation " + variation + " · " + value +
+          "\nMoves: " + moves;
+      }
+    };
+
+    sfWorker.onerror = reject;
+    sfWorker.postMessage("uci");
+  });
+
+  return sfReadyPromise;
+}
+
+document.getElementById("analyse").onclick = async () => {
+  const output = document.getElementById("result");
+  output.textContent = "Starting Stockfish 19 Lite…";
+
+  try {
+    await startStockfish();
+    sfWorker.postMessage("stop");
+    sfWorker.postMessage("setoption name MultiPV value 3");
+    sfWorker.postMessage("position fen " + game.fen());
+    sfWorker.postMessage("go movetime 10000");
+    output.textContent = "Stockfish is analysing…";
+  } catch (error) {
+    output.textContent = "Engine could not start. Check your connection and try again.";
+  }
+};render();
 </script></body></html>
