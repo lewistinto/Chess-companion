@@ -20,7 +20,7 @@ button:disabled{opacity:.4}
 .colour-choice{font-weight:bold;min-height:48px}
 .colour-choice.active{background:#24664f;border:2px solid #83d6ae}
 #board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;margin:12px auto;border:3px solid #34434e;touch-action:none;user-select:none;-webkit-user-select:none}
-.square{aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;font-size:clamp(27px,9vw,54px);padding:0;touch-action:none;cursor:pointer}
+.square{border:0;border-radius:0;padding:0;background:transparent;aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;font-size:clamp(27px,9vw,54px);touch-action:manipulation;cursor:pointer;min-width:0;min-height:0}
 .light{background:#e9dfc9}
 .dark{background:#789477}
 .white-piece{color:#fff!important;-webkit-text-stroke:1px #333;text-shadow:0 1px 2px #333}
@@ -55,6 +55,7 @@ input{width:100%;margin-top:8px}
 <button id="reset">New game</button>
 </div>
 <p id="turn">White to move</p>
+<p id="tapStatus" class="status">Board ready. Tap a piece to select it.</p>
 <p class="small">Tap a piece, then tap its highlighted destination. Both players' moves are entered manually.</p>
 </section>
 
@@ -131,12 +132,12 @@ function render(){
   for(let c=0;c<8;c++){
    const square=files[c]+(8-r);
    const piece=game.get(square);
-   const el=document.createElement("div");
-
+   const el=document.createElement("button");
+   el.type="button";
    el.className="square "+((r+c)%2?"dark":"light");
    el.dataset.square=square;
-   el.setAttribute("role","button");
    el.setAttribute("aria-label",square);
+   el.addEventListener("click",()=>handleSquare(square));
 
    if(selected===square)el.classList.add("selected");
    if(legal.some(m=>m.to===square))el.classList.add("target");
@@ -165,6 +166,7 @@ function render(){
 /* One delegated touch handler for the entire board */
 function handleSquare(square){
  if(!square||game.isGameOver())return;
+ document.getElementById("tapStatus").textContent="Tap registered: "+square;
 
  if(selected){
   const legal=game.moves({square:selected,verbose:true});
@@ -186,13 +188,6 @@ function handleSquare(square){
 
  render();
 }
-
-board.addEventListener("pointerup",function(event){
- const square=event.target.closest("[data-square]");
- if(!square)return;
- event.preventDefault();
- handleSquare(square.dataset.square);
-});
 
 function updateHistory(){
  const moves=game.history();
