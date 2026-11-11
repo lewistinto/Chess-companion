@@ -194,7 +194,10 @@ document.getElementById("copyfen").onclick=async()=>{
  try{await navigator.clipboard.writeText(game.fen());result.textContent="FEN copied to clipboard.";}
  catch(e){result.textContent=game.fen();}
 };
-analyseButton.onclick=analysePosition;
+analyseButton.addEventListener("click",()=>{
+  engineStatus.textContent="Analyse button pressed — starting engine...";
+  analysePosition();
+});
 stopButton.onclick=()=>{haltAnalysis();engineStatus.textContent="Analysis stopped";};
 render();
 </script>
